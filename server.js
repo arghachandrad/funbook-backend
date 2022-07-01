@@ -1,7 +1,12 @@
-import express from "express"
-import cors from "cors"
+const { readdirSync } = require("fs")
+const express = require("express")
+const mongoose = require("mongoose")
+const cors = require("cors")
+const dotenv = require("dotenv")
+dotenv.config()
 
 const app = express()
+app.use(express.json())
 
 // only allow particular domain for accessing apis
 let allowedOrigins = ["http://localhost:3000", "product link"]
@@ -21,14 +26,18 @@ const options = (req, res) => {
   res(null, tmp)
 }
 app.use(cors(options))
+// cors section ends
 
-app.get("/", (req, res) => {
-  res.send("welcome from home")
-})
-app.get("/books", (req, res) => {
-  res.send("welcome from new books")
-})
+// dynamic route imports
+readdirSync("./routes").map((r) => app.use("/", require(`./routes/${r}`)))
 
-app.listen(8000, () => {
-  console.log("server is listening...")
+// database
+mongoose
+  .connect(process.env.DATABASE_URL)
+  .then(() => console.log("Database connected successfully"))
+  .catch((err) => console.log(`error connecting to mongodb: ${err}`))
+
+const PORT = process.env.PORT || 8000
+app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`)
 })
